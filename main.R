@@ -1,5 +1,6 @@
 pacman::p_load(tidyverse, RSQLite, DBI, vroom, here, colorspace, 
-               ggfx, ggtext, ragg, shadowtext, extrafont)
+               ggfx, ggtext, ragg, shadowtext, extrafont, showtext, sysfonts,
+               systemfonts)
 
 base_path <- here()
 
@@ -30,7 +31,7 @@ episodes_st <- title_episode |>
 
 annotate_richtext <- function(label, ...) {
   annotate("richtext", label = label,
-           family = "Montserrat", size = 2.75,
+           family = "rubik", size = 2.75,
            fill = NA, label.color = NA, color = "grey94", label.padding = unit(0.05, "mm"),
            hjust = 0,
            ...)
@@ -53,25 +54,28 @@ episodes_st_cont_summary <- episodes_st_cont |>
   summarize(ep_cont_min = min(ep_cont),
             ep_cont_median = median(ep_cont))
 
-main_color <- "#B1281E"
+main_color <- "#0978e7"
 bg_color <- "grey9"
 title_pos <- 12.5
+font_add_google("Roboto", "roboto")
+font_add_google("Rubik", "rubik")
+# font_add_google("Rubik", "Rubik Doodle Shadow")
+# font_add_google("DM Sans", "sans-serif")
+showtext_auto()
 
 
 titles <- list(
-  "title" = "Dark",
+  "title" = "D A R K",
   "subtitle" = "
-  Dark is one of the best sci-fi series on Netflix. It has an overall rating of 8.7
-  on IMDB.
+  Dark is one of the best sci-fi series on Netflix. It has an overall rating of **8.7** on IMDB.
   There is variation between the ratings of the seasons and episodes, which is shown in this plot. 
-  Each **dot** represents the average IMDB rating of an episode. The **horizontal bars** indicate 
-                          average season ratings (weighted by the number of votes).",
-  "caption" = "Data: IMDB.com. Visualization: Ansgar Wolsing & Samrit Pramanik")
+  Each **dot** represents the average IMDB rating of an episode. The **horizontal** **bars** indicate 
+  average season ratings (weighted by the number of votes).",
+  "caption" = "Data: IMDB.com. Visualization: Samrit Pramanik")
 
-ragg::agg_png(here(base_path, "plots/dark_episode_ratings.png"), 
+ragg::agg_png(here(base_path, "plots/dark_episode_ratings.png"),
               width = 10, height = 6, res = 600, units = "in")
-episodes_st_cont |>  
-  # extend ep_cont for extended lines
+d <- episodes_st_cont |> 
   group_by(seasonNumber) |> 
   mutate(ep_cont_extended = case_when(
     ep_cont == min(ep_cont) ~ as.numeric(ep_cont) - 0.25,
@@ -82,7 +86,7 @@ episodes_st_cont |>
   ggplot(aes(ep_cont, averageRating, group = factor(seasonNumber))) +
   geom_curve(
     aes(xend = ep_cont, y = wgt_avg_season_rating, yend = averageRating),
-    col = main_color,  lty = "solid",  linewidth = 0.5, curvature = 0.2) +
+    col = main_color,  lty = "solid",  linewidth = 0.8, curvature = 0.2) +
   with_shadow(
     geom_line(
       aes(ep_cont_extended, y = wgt_avg_season_rating),
@@ -90,7 +94,7 @@ episodes_st_cont |>
     colour = "grey2", expand = 0.75, lineend = "butt", 
   ) +
   with_outer_glow(
-    geom_point(color = "grey80", size = 3),
+    geom_point(color = "grey80", size = 3.5),
     expand = 15, colour = main_color, sigma = 21
   ) +
   # geom_point(color = "grey80", size = 3) + 
@@ -99,53 +103,52 @@ episodes_st_cont |>
     aes(
       x = ep_cont_median, y = 10.25,
       label = glue::glue(
-        "<span style='font-size:9pt; color: grey72'>Season</span>
-       <span style='font-size:24pt; color: #84251D'>{seasonNumber}</span>"
+        "<span style='font-size:15pt; color: grey72'>Season</span>
+       <span style='font-size:30pt; color: #0978e7'>{seasonNumber}</span>"
       )
     ),
     stat = "unique", hjust = 0.5, vjust = 0.5, 
-    family = "Benguiat", fill = NA, label.size = 0
+    family = "sans-serif", fill = NA, label.size = 0
   ) + 
-  # Annotations
   # annotate_richtext(
   #   label = "S2 E7 (\"The Lost Sister\")<br>is odd with a rating of 6.1",
   #   x = 9.5, y = 6) +
-  # Custom title with shadowtext
   shadowtext::geom_shadowtext(
     data = NULL,
-    aes(x = nrow(episodes_st_cont) / 2, y = title_pos, label = titles$title), 
-    family = "Benguiat", color = bg_color, bg.color = "#B1281E", size = 9,
+    aes(x = nrow(episodes_st_cont) / 2, y = title_pos, label = titles$title),
+    family = title_font, color = bg_color, bg.color = "#0978e7", size = 35,
     hjust = 0.5, vjust = 0.7, inherit.aes = FALSE, lineheight = 0.8) +
   # Custom subtitle
   annotate(GeomTextBox, x = nrow(episodes_st_cont) / 2, y = title_pos - 0.75, 
            label = titles$subtitle, color = "grey82", 
-           width = 0.8, hjust = 0.5, halign = 0.5, vjust = 1, size = 3.5,
-           lineheight = 1.25, family = "Montserrat", fill = NA, box.size = 0) + 
-  scale_y_continuous(breaks = seq(6, 10, 1), minor_breaks = seq(6, 10, 0.5)) +
-  coord_cartesian(ylim = c(6, title_pos), clip = "off") +
+           width = 0.8, hjust = 0.5, halign = 0.5, vjust = 1, size = 7,
+           lineheight = 1.25, family = "rubik", fill = NA, box.size = 0) + 
+  scale_y_continuous(breaks = seq(7, 10, 1), minor_breaks = seq(7, 10, 0.5)) +
+  coord_cartesian(ylim = c(7, title_pos), clip = "off") +
   guides(color = "none") +
   labs(caption = titles["caption"], y = "Average Rating") +
-  theme_minimal(base_family = "Montserrat") +
+  theme_minimal(base_family = "rubik") +
   theme(
     plot.background = element_rect(color = NA, fill = bg_color),
     axis.title.x = element_blank(),
+    axis.title.y = element_text(color = "grey62", size = 15),
     axis.text.x = element_blank(),
     axis.ticks.x = element_blank(),
-    axis.text.y = element_text(color = "grey62"),
+    axis.text.y = element_text(color = "grey62", size = 17),
     panel.background = element_rect(color = NA, fill = NA),
     text = element_text(color = "grey82"),
-    plot.caption = element_markdown(),
+    plot.caption = element_markdown(size = 18),
     panel.grid = element_blank(),
     panel.grid.major.y = element_line(color = "grey20", linewidth = 0.2),
     panel.grid.minor.y = element_line(color = "grey20", linewidth = 0.1)
   )
-# invisible(dev.off())
 
+grid.draw(d)
+# d
+invisible(dev.off())
 
-
-
-
-
+ggsave("./plots/high_quality_plot4.svg", 
+       plot = grid.draw(d), width = 15, height = 7.5, dpi = 300, units = "in")
 
 
 
